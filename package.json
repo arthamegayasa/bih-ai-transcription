@@ -1,6 +1,6 @@
 {
   "name": "bih-ai-transcription",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "AI Medical Transcription demo for Bali International Hospital — interactive presentation with live SOAP generation",
   "scripts": {
@@ -8,7 +8,8 @@
     "deploy": "vercel deploy --prod"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.69.0"
+    "@anthropic-ai/sdk": "^0.69.0",
+    "openai": "^4.95.0"
   },
   "engines": {
     "node": ">=20.x"

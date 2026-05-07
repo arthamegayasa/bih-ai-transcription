@@ -3,6 +3,9 @@
   "functions": {
     "api/generate-soap.js": {
       "maxDuration": 30
+    },
+    "api/process-audio.js": {
+      "maxDuration": 60
     }
   }
 }

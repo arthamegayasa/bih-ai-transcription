@@ -458,26 +458,40 @@
 
       <!-- LIVE PANEL -->
       <div id="panel-live" class="flex-1 flex-col gap-4 hidden" style="min-height: 0;">
-        <div class="flex-shrink-0 bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-5">
-          <button id="mic-btn" class="w-16 h-16 rounded-full bg-red-600 text-white text-2xl flex items-center justify-center hover:bg-red-700 transition shadow-lg flex-shrink-0">🎙️</button>
+        <div class="flex-shrink-0 bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-5 flex-wrap">
+          <button id="mic-btn" class="px-5 py-3 rounded-full bg-red-600 text-white text-sm font-bold flex items-center gap-2 hover:bg-red-700 transition shadow-md flex-shrink-0">
+            <span id="mic-icon">🎙️</span> <span id="mic-label">Start Recording</span>
+          </button>
           <div class="flex-1 min-w-0">
-            <p id="live-status" class="font-semibold text-sm text-bih-navy">Click the microphone, then speak.</p>
-            <p class="text-xs text-gray-500 mt-1">Your audio stays in the browser; transcription uses Web Speech API. Best in Chrome / Edge.</p>
+            <div id="live-idle-info">
+              <p id="live-status" class="font-semibold text-sm text-bih-navy">Click to start. Recording continues until you click stop.</p>
+              <p class="text-xs text-gray-500 mt-1">Audio is captured in the browser, then sent for transcription via Whisper. Best in Chrome / Edge.</p>
+            </div>
+            <div id="rec-timer-wrap" class="hidden">
+              <p class="font-semibold text-sm text-red-600 flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-red-600 mic-pulse"></span>
+                Recording · <span id="rec-timer" class="font-mono">0:00</span>
+              </p>
+              <p class="text-xs text-gray-500 mt-1">Speak naturally — both speakers will be diarized after you stop.</p>
+            </div>
           </div>
-          <div class="flex items-center gap-1 text-xs flex-shrink-0">
-            <span class="text-gray-400 mr-1">Lang:</span>
-            <button id="lang-id" class="lang-btn active px-3 py-1.5 rounded-l-md border-2 border-bih-navy text-xs font-semibold">🇮🇩 ID</button>
-            <button id="lang-en" class="lang-btn px-3 py-1.5 rounded-r-md border-2 border-l-0 border-gray-300 text-gray-600 text-xs font-semibold">🇬🇧 EN</button>
+          <div class="flex items-center gap-2 text-xs flex-shrink-0">
+            <label for="lang-select" class="text-gray-400 font-semibold">Language:</label>
+            <select id="lang-select" class="border-2 border-gray-300 rounded-md px-3 py-2 text-xs font-semibold bg-white text-bih-navy focus:border-bih-navy outline-none">
+              <option value="auto">🌍 Auto (multilingual)</option>
+              <option value="id">🇮🇩 Indonesian</option>
+              <option value="en">🇬🇧 English</option>
+            </select>
           </div>
-          <button id="live-generate" class="px-5 py-3 text-sm font-bold bg-bih-navy text-white rounded-lg hover:bg-bih-navy-light disabled:bg-gray-300 disabled:cursor-not-allowed flex-shrink-0" disabled>Generate SOAP →</button>
         </div>
+        <div id="live-error" class="hidden bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700"></div>
         <div class="bg-white rounded-xl border border-gray-200 flex-1 flex flex-col" style="min-height: 0;">
           <div class="px-4 py-2.5 border-b border-gray-100 text-xs font-bold uppercase tracking-widest text-gray-500 flex justify-between items-center">
-            <span>Real-time transcript</span>
-            <button id="live-clear" class="text-[10px] italic text-gray-400 normal-case font-normal hover:text-bih-navy">Clear</button>
+            <span>Transcript</span>
+            <span id="transcript-meta" class="text-[10px] italic text-gray-400 normal-case font-normal">Speaker labels inferred from content</span>
           </div>
-          <div id="live-transcript" class="flex-1 overflow-y-auto scrollbar-thin p-5 text-base leading-relaxed text-gray-800">
-            <span class="text-gray-400 italic">Transcript will appear here as you speak…</span>
+          <div id="live-transcript-display" class="flex-1 overflow-y-auto scrollbar-thin p-5 text-sm leading-relaxed text-gray-800">
+            <span class="text-gray-400 italic">Transcript will appear here after you stop recording.</span>
           </div>
         </div>
       </div>
@@ -1018,156 +1032,257 @@
 
   watchGenBtn.addEventListener('click', async () => {
     const scenario = SCENARIOS[activeScenarioKey];
-    const transcriptText = scenario.dialog.map(t => `${t.speaker === 'doctor' ? '[Doctor]' : '[Patient]'} ${t.text}`).join('\n');
-    showSoapLoading();
-    let soap;
-    try {
-      const res = await fetch('/api/generate-soap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: transcriptText })
-      });
-      soap = await res.json();
-      if (soap._fallback || !soap.subjective) throw new Error('fallback');
-    } catch (e) {
-      soap = { ...scenario.cachedSoap, _fallback: true, _fallback_reason: 'Using cached scenario response.' };
-    }
-    renderSoapCard(soap, scenario.meta);
+    showSoapLoading('watch');
+    // Watch mode is deterministic — always use cached SOAP, never call API.
+    // This keeps the demo fast and consistent. Real AI is reserved for Live mode.
+    await sleep(900);
+    renderSoapCard({ ...scenario.cachedSoap, _watch_mode: true }, scenario.meta);
   });
 
-  // ============== DEMO — LIVE MODE ==============
+  // ============== DEMO — LIVE MODE (MediaRecorder + Whisper + Claude) ==============
   const micBtn = document.getElementById('mic-btn');
-  const liveStatus = document.getElementById('live-status');
-  const liveTrans = document.getElementById('live-transcript');
-  const liveGenBtn = document.getElementById('live-generate');
-  const liveClearBtn = document.getElementById('live-clear');
-  let recognition = null;
-  let liveRecording = false;
-  let liveFinalTranscript = '';
-  let liveInterim = '';
+  const micIcon = document.getElementById('mic-icon');
+  const micLabel = document.getElementById('mic-label');
+  const liveIdleInfo = document.getElementById('live-idle-info');
+  const recTimerWrap = document.getElementById('rec-timer-wrap');
+  const recTimerEl = document.getElementById('rec-timer');
+  const langSelect = document.getElementById('lang-select');
+  const liveError = document.getElementById('live-error');
+  const liveTranscriptDisplay = document.getElementById('live-transcript-display');
+  const transcriptMeta = document.getElementById('transcript-meta');
 
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    micBtn.disabled = true;
-    micBtn.classList.add('opacity-50', 'cursor-not-allowed');
-    liveStatus.textContent = 'Browser does not support Web Speech API. Try Chrome or Edge.';
+  let mediaStream = null;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordingStartTime = null;
+  let recordingTimerInterval = null;
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  // Live mode language toggle
-  let liveLanguage = 'id';
-  const langIdBtn = document.getElementById('lang-id');
-  const langEnBtn = document.getElementById('lang-en');
-  function setLiveLanguage(lang) {
-    if (lang === liveLanguage) return;
-    liveLanguage = lang;
-    langIdBtn.classList.toggle('active', lang === 'id');
-    langEnBtn.classList.toggle('active', lang === 'en');
-    const wasRecording = liveRecording;
-    if (wasRecording) {
-      stopListening();
-      setTimeout(() => startListening(), 250);
-    } else {
-      liveStatus.textContent = lang === 'id'
-        ? 'Click the microphone, then speak in Bahasa Indonesia.'
-        : 'Click the microphone, then speak in English.';
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  function setLiveErrorMsg(msg) {
+    if (!msg) { liveError.classList.add('hidden'); return; }
+    liveError.textContent = msg;
+    liveError.classList.remove('hidden');
+  }
+
+  function setMicState(state) {
+    if (state === 'recording') {
+      micBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+      micBtn.classList.add('bg-gray-800', 'hover:bg-gray-900');
+      micIcon.textContent = '⏹';
+      micLabel.textContent = 'Stop Recording';
+      micBtn.disabled = false;
+      liveIdleInfo.classList.add('hidden');
+      recTimerWrap.classList.remove('hidden');
+      langSelect.disabled = true;
+    } else if (state === 'processing') {
+      micBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+      micBtn.classList.add('bg-gray-400');
+      micIcon.textContent = '⏳';
+      micLabel.textContent = 'Processing…';
+      micBtn.disabled = true;
+      recTimerWrap.classList.add('hidden');
+      liveIdleInfo.classList.add('hidden');
+    } else { // idle
+      micBtn.classList.remove('bg-gray-800', 'hover:bg-gray-900', 'bg-gray-400');
+      micBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+      micIcon.textContent = '🎙️';
+      micLabel.textContent = 'Start Recording';
+      micBtn.disabled = false;
+      liveIdleInfo.classList.remove('hidden');
+      recTimerWrap.classList.add('hidden');
+      langSelect.disabled = false;
     }
   }
-  langIdBtn.addEventListener('click', () => setLiveLanguage('id'));
-  langEnBtn.addEventListener('click', () => setLiveLanguage('en'));
 
-  function renderLiveTranscript() {
-    if (!liveFinalTranscript && !liveInterim) {
-      liveTrans.innerHTML = '<span class="text-gray-400 italic">Transcript will appear here as you speak…</span>';
-      liveGenBtn.disabled = true;
+  function startRecTimer() {
+    stopRecTimer();
+    updateRecTimer();
+    recordingTimerInterval = setInterval(updateRecTimer, 1000);
+  }
+  function stopRecTimer() {
+    if (recordingTimerInterval) { clearInterval(recordingTimerInterval); recordingTimerInterval = null; }
+  }
+  function updateRecTimer() {
+    if (!recordingStartTime) return;
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    recTimerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  async function startRecording() {
+    setLiveErrorMsg(null);
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setLiveErrorMsg('This browser does not support audio recording. Try Chrome, Edge, or Firefox.');
       return;
     }
-    liveTrans.innerHTML = `<span>${escapeHtml(liveFinalTranscript)}</span><span class="text-gray-400">${escapeHtml(liveInterim)}</span>`;
-    liveTrans.scrollTop = liveTrans.scrollHeight;
-    liveGenBtn.disabled = liveFinalTranscript.trim().length < 10;
-  }
-  function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+    } catch (e) {
+      setLiveErrorMsg('Microphone access was denied. Allow microphone permission and try again.');
+      return;
+    }
+
+    audioChunks = [];
+    const mimeOptions = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    let chosenMime = '';
+    for (const m of mimeOptions) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) { chosenMime = m; break; }
+    }
+    try {
+      mediaRecorder = chosenMime ? new MediaRecorder(mediaStream, { mimeType: chosenMime }) : new MediaRecorder(mediaStream);
+    } catch (e) {
+      setLiveErrorMsg('MediaRecorder could not start: ' + (e.message || e));
+      releaseStream();
+      return;
+    }
+    mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = handleRecordingStopped;
+    mediaRecorder.onerror = (e) => {
+      setLiveErrorMsg('Recording error: ' + (e.error?.name || 'unknown'));
+      releaseStream();
+      setMicState('idle');
+    };
+    try {
+      mediaRecorder.start(250);
+    } catch (e) {
+      setLiveErrorMsg('Could not start recording: ' + (e.message || e));
+      releaseStream();
+      return;
+    }
+
+    recordingStartTime = Date.now();
+    startRecTimer();
+    setMicState('recording');
+    liveTranscriptDisplay.innerHTML = '<span class="text-gray-400 italic">Recording — your transcript will appear here when you stop.</span>';
+    transcriptMeta.textContent = 'Speaker labels inferred from content';
   }
 
-  function startListening() {
-    if (!SR) return;
-    recognition = new SR();
-    recognition.lang = liveLanguage === 'id' ? 'id-ID' : 'en-US';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = (event) => {
-      liveInterim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          liveFinalTranscript += result[0].transcript + ' ';
-        } else {
-          liveInterim += result[0].transcript;
-        }
-      }
-      renderLiveTranscript();
-    };
-    recognition.onerror = (e) => {
-      liveStatus.innerHTML = `<span class="text-red-600">Error: ${e.error}.</span> Try again, or use the Watch tab.`;
-      stopListening();
-    };
-    recognition.onend = () => {
-      if (liveRecording) {
-        try { recognition.start(); } catch (e) { /* ignore */ }
-      }
-    };
-    try {
-      recognition.start();
-      liveRecording = true;
-      micBtn.classList.add('mic-pulse');
-      micBtn.textContent = '⏹';
-      const langName = liveLanguage === 'id' ? 'Bahasa Indonesia' : 'English';
-      liveStatus.innerHTML = `<span class="text-red-600 font-semibold">● Listening</span> — speak in ${langName}.`;
-    } catch (e) {
-      liveStatus.textContent = 'Could not start microphone.';
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      stopRecTimer();
     }
   }
-  function stopListening() {
-    liveRecording = false;
-    if (recognition) { try { recognition.stop(); } catch (e) {} }
-    micBtn.classList.remove('mic-pulse');
-    micBtn.textContent = '🎙️';
-    liveStatus.textContent = liveFinalTranscript ? 'Stopped. Click Generate SOAP, or click the mic to keep recording.' : 'Stopped. Click the mic to start again.';
+
+  function releaseStream() {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(t => t.stop());
+      mediaStream = null;
+    }
   }
-  micBtn.addEventListener('click', () => {
-    if (!liveRecording) startListening(); else stopListening();
-  });
-  liveClearBtn.addEventListener('click', () => {
-    liveFinalTranscript = '';
-    liveInterim = '';
-    renderLiveTranscript();
-  });
-  liveGenBtn.addEventListener('click', async () => {
-    const transcriptText = liveFinalTranscript.trim();
-    if (transcriptText.length < 10) return;
-    if (liveRecording) stopListening();
-    showSoapLoading();
-    let soap;
+
+  async function handleRecordingStopped() {
+    const recordedMime = mediaRecorder ? mediaRecorder.mimeType : 'audio/webm';
+    const blob = new Blob(audioChunks, { type: recordedMime });
+    releaseStream();
+
+    if (blob.size < 2000) {
+      setLiveErrorMsg('Recording was too short to transcribe. Please try again and speak for at least a few seconds.');
+      setMicState('idle');
+      return;
+    }
+
+    setMicState('processing');
+    showSoapLoading('transcribing');
     try {
-      const res = await fetch('/api/generate-soap', {
+      const arrayBuffer = await blob.arrayBuffer();
+      const base64 = arrayBufferToBase64(arrayBuffer);
+      const res = await fetch('/api/process-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: transcriptText })
+        body: JSON.stringify({
+          audio: base64,
+          mimeType: recordedMime,
+          language: langSelect.value
+        })
       });
-      soap = await res.json();
-      if (soap._fallback || !soap.subjective) throw new Error('fallback');
+
+      if (!res.ok) {
+        let errBody = {};
+        try { errBody = await res.json(); } catch (e) {}
+        throw new Error(errBody.error || `Server returned ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (data.labeled_transcript && data.labeled_transcript.length) {
+        renderLiveTranscript(data.labeled_transcript, data.detected_language, data.raw_transcript);
+        updateSoapLoading('structuring');
+        await sleep(120);
+      } else if (data.raw_transcript) {
+        renderLiveTranscriptRaw(data.raw_transcript, data.detected_language);
+      } else {
+        throw new Error('No transcription returned');
+      }
+
+      if (data.soap) {
+        renderSoapCard(
+          { ...data.soap, _live_mode: true, _detected_language: data.detected_language },
+          { age: '—', sex: '—', specialty: data.soap.specialty_hint || 'Live test', provider: 'Demo user' }
+        );
+      } else {
+        soapOverlay.classList.add('hidden');
+        soapOverlay.classList.remove('flex');
+      }
     } catch (e) {
-      soap = {
-        subjective: 'Demo offline — the API call could not complete. The transcript was: \"' + transcriptText.slice(0, 200) + (transcriptText.length > 200 ? '…' : '') + '\"',
-        objective: 'In a real session, vital signs and exam findings would be summarized here from the transcript.',
-        assessment: 'Provisional structuring would appear here.',
-        plan: 'Investigations, medications, patient education, and follow-up plan would appear here.',
-        chief_complaint: 'Live demo (offline)',
-        specialty_hint: 'general',
-        _fallback: true
-      };
+      console.error('Live processing error:', e);
+      soapOverlay.classList.add('hidden');
+      soapOverlay.classList.remove('flex');
+      setLiveErrorMsg('Could not process the recording: ' + (e.message || e));
+    } finally {
+      setMicState('idle');
     }
-    renderSoapCard(soap, { age: '—', sex: '—', specialty: 'Live test', provider: 'Demo user' });
+  }
+
+  function speakerColorClass(speaker) {
+    const s = (speaker || '').toLowerCase();
+    if (s.includes('doctor') || s.includes('clinician') || s.includes('physician')) return 'text-bih-navy';
+    if (s.includes('patient')) return 'text-bih-green-dark';
+    return 'text-gray-600';
+  }
+
+  function renderLiveTranscript(turns, detectedLang, rawText) {
+    const langTag = detectedLang
+      ? `<div class="text-[11px] text-gray-500 italic mb-3">Detected language: <strong class="not-italic uppercase tracking-wider">${escapeHtml(detectedLang)}</strong></div>`
+      : '';
+    const html = turns.map(t => {
+      const cls = speakerColorClass(t.speaker);
+      return `<div class="mb-3"><span class="font-bold ${cls} text-[10px] uppercase tracking-widest">[${escapeHtml(t.speaker)}]</span> <span class="text-gray-800 ml-1">${escapeHtml(t.text)}</span></div>`;
+    }).join('');
+    liveTranscriptDisplay.innerHTML = langTag + html;
+    transcriptMeta.textContent = `${turns.length} turn${turns.length === 1 ? '' : 's'} · speaker labels inferred from content`;
+  }
+
+  function renderLiveTranscriptRaw(text, detectedLang) {
+    const langTag = detectedLang
+      ? `<div class="text-[11px] text-gray-500 italic mb-3">Detected language: <strong class="not-italic uppercase tracking-wider">${escapeHtml(detectedLang)}</strong></div>`
+      : '';
+    liveTranscriptDisplay.innerHTML = langTag + `<div class="text-gray-800 leading-relaxed">${escapeHtml(text)}</div>`;
+    transcriptMeta.textContent = 'Raw transcript · speaker labels unavailable';
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      stopRecording();
+    } else {
+      startRecording();
+    }
   });
 
   // ============== SOAP CARD ==============
@@ -1185,15 +1300,32 @@
     }
   });
 
-  function showSoapLoading() {
+  function showSoapLoading(stage) {
+    const labels = {
+      'transcribing': { title: 'Transcribing audio…', sub: 'Whisper · multilingual' },
+      'structuring':  { title: 'Structuring SOAP note…', sub: 'Claude Haiku 4.5' },
+      'watch':        { title: 'Generating SOAP draft…', sub: 'Demo · pre-generated' },
+    };
+    const l = labels[stage] || labels['structuring'];
     soapMount.innerHTML = `
       <div class="soap-card rounded-xl overflow-hidden p-12 text-center fade-in">
         <div class="inline-block w-10 h-10 border-4 border-bih-navy border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p class="text-bih-navy font-semibold font-sans">Structuring SOAP note…</p>
-        <p class="text-gray-500 text-sm mt-2 font-sans">Calling Claude Haiku 4.5</p>
+        <p id="soap-loading-title" class="text-bih-navy font-semibold font-sans">${l.title}</p>
+        <p id="soap-loading-sub" class="text-gray-500 text-sm mt-2 font-sans">${l.sub}</p>
       </div>`;
     soapOverlay.classList.remove('hidden');
     soapOverlay.classList.add('flex');
+  }
+  function updateSoapLoading(stage) {
+    const labels = {
+      'transcribing': { title: 'Transcribing audio…', sub: 'Whisper · multilingual' },
+      'structuring':  { title: 'Structuring SOAP note…', sub: 'Claude Haiku 4.5' },
+    };
+    const l = labels[stage] || labels['structuring'];
+    const t = document.getElementById('soap-loading-title');
+    const s = document.getElementById('soap-loading-sub');
+    if (t) t.textContent = l.title;
+    if (s) s.textContent = l.sub;
   }
 
   function renderSoapCard(soap, meta) {
