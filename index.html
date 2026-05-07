@@ -338,61 +338,77 @@
   </section>
 
   <!-- ─────────── SLIDE 4 — MODEL LANDSCAPE ─────────── -->
-  <section class="slide slide-bg-cream" data-slide="4" data-notes='["Audience may equate AI with ChatGPT. Spend a moment here breaking that down.","The point: there is no single AI model. There is a stack of choices. BIH can mix them.","Whisper is established for speech. Gemma 4 has native Indonesian audio. Closed APIs are easiest but pull data offshore."]'>
+  <section class="slide slide-bg-cream" data-slide="4" data-notes='["Audience may equate AI with ChatGPT. Spend a moment breaking that down.","The first two rows are the products people pitch — Heidi as a third-party scribe, and InterSystems IntelliCare as the AI-augmented next-gen TrakCare from our own EMR vendor. Mention IntelliCare timing — regulatory approval expected mid-2026, so practically arriving the same window we would be running an internal pilot.","The remaining rows are general AI building blocks. An in-house or hybrid build assembles from these.","Key point: BIH does not have to pick one row. A real deployment usually mixes — for example, on-device for capture and a managed cloud model for structuring."]'>
     <div class="flex-1 flex flex-col justify-center max-w-7xl">
       <p class="text-bih-green font-semibold text-xs tracking-[0.3em] uppercase mb-4">The Model Landscape</p>
       <h2 class="font-extrabold text-5xl leading-tight text-bih-navy mb-10 max-w-4xl">
         There is no single &ldquo;AI model.&rdquo;<br/>There is an ecosystem.
       </h2>
       <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+        <table class="w-full text-xs">
           <thead class="bg-bih-navy text-white">
             <tr>
-              <th class="text-left px-5 py-3 font-semibold">Approach</th>
-              <th class="text-left px-5 py-3 font-semibold">Examples</th>
-              <th class="text-left px-5 py-3 font-semibold">Where data lives</th>
-              <th class="text-left px-5 py-3 font-semibold">Indonesian</th>
-              <th class="text-left px-5 py-3 font-semibold">Customizable</th>
-              <th class="text-left px-5 py-3 font-semibold">Cost shape</th>
+              <th class="text-left px-4 py-3 font-semibold">Approach</th>
+              <th class="text-left px-4 py-3 font-semibold">Examples</th>
+              <th class="text-left px-4 py-3 font-semibold">Where data lives</th>
+              <th class="text-left px-4 py-3 font-semibold">Indonesian</th>
+              <th class="text-left px-4 py-3 font-semibold">Customizable</th>
+              <th class="text-left px-4 py-3 font-semibold">Cost shape</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr>
-              <td class="px-5 py-4 font-semibold text-bih-navy">Closed API</td>
-              <td class="px-5 py-4 text-gray-700">OpenAI Whisper, Anthropic Claude, Google Gemini</td>
-              <td class="px-5 py-4 text-red-600">Vendor's region (US / EU / SG)</td>
-              <td class="px-5 py-4">Strong</td>
-              <td class="px-5 py-4 text-amber-700">Limited</td>
-              <td class="px-5 py-4 text-gray-700">Per token</td>
+            <tr class="bg-bih-cream/40">
+              <td class="px-4 py-3 font-semibold text-bih-navy">Vertical AI scribe (SaaS)</td>
+              <td class="px-4 py-3 text-gray-700">Heidi, Augmedix, Nabla, DAX Copilot</td>
+              <td class="px-4 py-3 text-red-600">Vendor's region (often AU / US)</td>
+              <td class="px-4 py-3 text-amber-700">Vendor-claimed, must test</td>
+              <td class="px-4 py-3 text-amber-700">Template library only</td>
+              <td class="px-4 py-3 text-gray-700">Per clinician / month</td>
+            </tr>
+            <tr class="bg-bih-cream/40">
+              <td class="px-4 py-3 font-semibold text-bih-navy">EMR-native AI module</td>
+              <td class="px-4 py-3 text-gray-700"><strong>InterSystems IntelliCare</strong> (built on TrakCare); Epic Cosmos AI</td>
+              <td class="px-4 py-3 text-red-600">Vendor's cloud regions</td>
+              <td class="px-4 py-3 text-amber-700">Roadmap-dependent</td>
+              <td class="px-4 py-3 text-amber-700">Within EMR workflow</td>
+              <td class="px-4 py-3 text-gray-700">Module licence</td>
             </tr>
             <tr>
-              <td class="px-5 py-4 font-semibold text-bih-navy">Open-weight on managed cloud</td>
-              <td class="px-5 py-4 text-gray-700">Whisper, Gemma 4, Llama on HF Endpoints</td>
-              <td class="px-5 py-4 text-amber-700">Region of choice (incl. Singapore)</td>
-              <td class="px-5 py-4">Yes (140+ langs in Gemma 4)</td>
-              <td class="px-5 py-4 text-bih-green-dark">Full fine-tuning possible</td>
-              <td class="px-5 py-4 text-gray-700">Per GPU hour</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Closed LLM API</td>
+              <td class="px-4 py-3 text-gray-700">OpenAI Whisper, Anthropic Claude, Google Gemini</td>
+              <td class="px-4 py-3 text-red-600">Vendor's region (US / EU / SG)</td>
+              <td class="px-4 py-3">Strong</td>
+              <td class="px-4 py-3 text-amber-700">Prompt-level only</td>
+              <td class="px-4 py-3 text-gray-700">Per token</td>
             </tr>
             <tr>
-              <td class="px-5 py-4 font-semibold text-bih-navy">Self-hosted (in-country)</td>
-              <td class="px-5 py-4 text-gray-700">Whisper / Gemma on a GPU server in Jakarta</td>
-              <td class="px-5 py-4 text-bih-green-dark">Indonesia</td>
-              <td class="px-5 py-4">Yes (with tuning)</td>
-              <td class="px-5 py-4 text-bih-green-dark">Full</td>
-              <td class="px-5 py-4 text-gray-700">Capex + ops</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Open-weight on managed cloud</td>
+              <td class="px-4 py-3 text-gray-700">Whisper, Gemma 4, Llama on HF Endpoints</td>
+              <td class="px-4 py-3 text-amber-700">Region of choice (incl. Singapore)</td>
+              <td class="px-4 py-3">Yes (140+ langs in Gemma 4)</td>
+              <td class="px-4 py-3 text-bih-green-dark">Full fine-tuning possible</td>
+              <td class="px-4 py-3 text-gray-700">Per GPU hour</td>
             </tr>
             <tr>
-              <td class="px-5 py-4 font-semibold text-bih-navy">On-device</td>
-              <td class="px-5 py-4 text-gray-700">Gemma 4 E2B on a clinician's phone</td>
-              <td class="px-5 py-4 text-bih-green-dark">The phone itself</td>
-              <td class="px-5 py-4">Yes</td>
-              <td class="px-5 py-4 text-amber-700">Limited (model size)</td>
-              <td class="px-5 py-4 text-gray-700">One-time</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Self-hosted (in-country)</td>
+              <td class="px-4 py-3 text-gray-700">Whisper / Gemma on a GPU server in Jakarta</td>
+              <td class="px-4 py-3 text-bih-green-dark">Indonesia</td>
+              <td class="px-4 py-3">Yes (with tuning)</td>
+              <td class="px-4 py-3 text-bih-green-dark">Full</td>
+              <td class="px-4 py-3 text-gray-700">Capex + ops</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3 font-semibold text-bih-navy">On-device</td>
+              <td class="px-4 py-3 text-gray-700">Gemma 4 E2B on a clinician's phone</td>
+              <td class="px-4 py-3 text-bih-green-dark">The phone itself</td>
+              <td class="px-4 py-3">Yes</td>
+              <td class="px-4 py-3 text-amber-700">Limited (model size)</td>
+              <td class="px-4 py-3 text-gray-700">One-time</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p class="text-sm text-gray-600 mt-6 max-w-3xl">The right answer is rarely a single row of this table. A real deployment usually mixes — for example, on-device for capture and a managed cloud model for structuring.</p>
+      <p class="text-sm text-gray-600 mt-6 max-w-4xl">The first two rows are vertical products built specifically for clinical scribing. <strong class="text-bih-navy">InterSystems IntelliCare is particularly relevant for BIH</strong> — it is the AI-augmented next-generation TrakCare from our existing EMR vendor, with regulatory approval expected mid-2026. The remaining rows are general AI building blocks that an in-house or hybrid build would assemble.</p>
     </div>
   </section>
 
@@ -479,67 +495,75 @@
   </section>
 
   <!-- ─────────── SLIDE 6 — BUILD vs BUY vs HYBRID ─────────── -->
-  <section class="slide" data-slide="6" data-notes='["Reference Heidi by name once — establish that we have seen what is possible — then move to dimensions.","Do not disparage. Just surface trade-offs. Different answers for different scopes.","If anyone in the room champions Heidi, this slide does not contradict them. It just adds rigor."]'>
+  <section class="slide" data-slide="6" data-notes='["Surface that there are now FOUR realistic paths, not just buy-vs-build. Heidi (third-party SaaS) and IntelliCare (TrakCare-native) are both Buy options with different risk profiles.","IntelliCare is genuinely interesting — it is from our own EMR vendor, with regulatory approval expected mid-2026. But: it lives in InterSystems cloud, follows their roadmap timing, and reinforces existing lock-in.","Do not disparage any of these. Just surface trade-offs. The dimension that matters most varies by which scope BIH is solving for.","If anyone in the room champions Heidi or wants to wait for IntelliCare, this slide does not contradict them. It just adds rigor to the comparison."]'>
     <div class="flex-1 flex flex-col justify-center max-w-7xl">
       <p class="text-bih-green font-semibold text-xs tracking-[0.3em] uppercase mb-4">Three Paths</p>
       <h2 class="font-extrabold text-5xl leading-tight text-bih-navy mb-3 max-w-4xl">
         Build, buy, or somewhere in between.
       </h2>
-      <p class="text-base text-gray-600 mb-10 max-w-3xl">
-        Heidi has shown us what an AI medical scribe feels like in practice. The next question is not <em>whether</em> AI scribing works — it does — but <em>which path fits BIH</em>.
+      <p class="text-base text-gray-600 mb-10 max-w-4xl">
+        Heidi has shown us what an AI medical scribe feels like in practice, and our EMR vendor is releasing <strong>InterSystems IntelliCare</strong> with native AI scribing this year. The question is not <em>whether</em> AI scribing works — it does — but <em>which path fits BIH</em>.
       </p>
       <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+        <table class="w-full text-xs">
           <thead class="bg-bih-navy text-white">
             <tr>
-              <th class="text-left px-5 py-3 font-semibold">Dimension</th>
-              <th class="text-left px-5 py-3 font-semibold">Buy <span class="opacity-60 text-xs italic">(SaaS, e.g. Heidi)</span></th>
-              <th class="text-left px-5 py-3 font-semibold">Build <span class="opacity-60 text-xs italic">(in-house)</span></th>
-              <th class="text-left px-5 py-3 font-semibold">Hybrid</th>
+              <th class="text-left px-4 py-3 font-semibold">Dimension</th>
+              <th class="text-left px-4 py-3 font-semibold">Buy SaaS <span class="opacity-60 text-[10px] italic">(Heidi)</span></th>
+              <th class="text-left px-4 py-3 font-semibold">Buy EMR-native <span class="opacity-60 text-[10px] italic">(IntelliCare)</span></th>
+              <th class="text-left px-4 py-3 font-semibold">Build <span class="opacity-60 text-[10px] italic">(in-house)</span></th>
+              <th class="text-left px-4 py-3 font-semibold">Hybrid</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr>
-              <td class="px-5 py-3 font-semibold text-bih-navy">Time to first value</td>
-              <td class="px-5 py-3">Days</td>
-              <td class="px-5 py-3">4–12 weeks</td>
-              <td class="px-5 py-3">6–8 weeks</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Time to first value</td>
+              <td class="px-4 py-3">Days</td>
+              <td class="px-4 py-3 text-amber-700">Tied to vendor roadmap (mid-2026+)</td>
+              <td class="px-4 py-3">4–12 weeks</td>
+              <td class="px-4 py-3">6–8 weeks</td>
             </tr>
             <tr>
-              <td class="px-5 py-3 font-semibold text-bih-navy">Data residency</td>
-              <td class="px-5 py-3 text-red-600">Vendor's region (typically AU / US)</td>
-              <td class="px-5 py-3 text-bih-green-dark">Indonesia or Singapore (we choose)</td>
-              <td class="px-5 py-3 text-amber-700">Mixed — depends on architecture</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Data residency</td>
+              <td class="px-4 py-3 text-red-600">Vendor region (AU / US)</td>
+              <td class="px-4 py-3 text-red-600">InterSystems cloud regions</td>
+              <td class="px-4 py-3 text-bih-green-dark">Indonesia or Singapore (we choose)</td>
+              <td class="px-4 py-3 text-amber-700">Mixed</td>
             </tr>
             <tr>
-              <td class="px-5 py-3 font-semibold text-bih-navy">Indonesian + medical lexicon</td>
-              <td class="px-5 py-3">Pre-trained, may need testing</td>
-              <td class="px-5 py-3">Tunable to BIH-specific terms</td>
-              <td class="px-5 py-3">Tune the AI layer only</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Indonesian + medical lexicon</td>
+              <td class="px-4 py-3">Pre-trained, must test</td>
+              <td class="px-4 py-3 text-amber-700">Roadmap-dependent</td>
+              <td class="px-4 py-3 text-bih-green-dark">Tunable to BIH terms</td>
+              <td class="px-4 py-3 text-bih-green-dark">Tune the AI layer</td>
             </tr>
             <tr>
-              <td class="px-5 py-3 font-semibold text-bih-navy">Template customization</td>
-              <td class="px-5 py-3 text-amber-700">Limited to vendor library</td>
-              <td class="px-5 py-3 text-bih-green-dark">Full — any document, any structure</td>
-              <td class="px-5 py-3 text-bih-green-dark">Full at the AI layer</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Template customization</td>
+              <td class="px-4 py-3 text-amber-700">Vendor library</td>
+              <td class="px-4 py-3 text-amber-700">Within EMR workflow</td>
+              <td class="px-4 py-3 text-bih-green-dark">Full — any document</td>
+              <td class="px-4 py-3 text-bih-green-dark">Full at AI layer</td>
             </tr>
             <tr>
-              <td class="px-5 py-3 font-semibold text-bih-navy">TrakCare integration</td>
-              <td class="px-5 py-3">Vendor-dependent (HL7/FHIR if offered)</td>
-              <td class="px-5 py-3">Direct, our roadmap</td>
-              <td class="px-5 py-3">Direct, our roadmap</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">TrakCare integration</td>
+              <td class="px-4 py-3">Via HL7/FHIR (if offered)</td>
+              <td class="px-4 py-3 text-bih-green-dark">Native by design</td>
+              <td class="px-4 py-3">Our roadmap (HL7/FHIR)</td>
+              <td class="px-4 py-3">Our roadmap</td>
             </tr>
             <tr>
-              <td class="px-5 py-3 font-semibold text-bih-navy">Cost shape (3 yr)</td>
-              <td class="px-5 py-3">Per-clinician licence × time</td>
-              <td class="px-5 py-3">Fixed infra + ops + dev time</td>
-              <td class="px-5 py-3">Mixed</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Cost shape (3 yr)</td>
+              <td class="px-4 py-3">Per-clinician × time</td>
+              <td class="px-4 py-3">Module licence + uplift</td>
+              <td class="px-4 py-3">Fixed infra + ops + dev</td>
+              <td class="px-4 py-3">Mixed</td>
             </tr>
             <tr>
-              <td class="px-5 py-3 font-semibold text-bih-navy">Vendor lock-in</td>
-              <td class="px-5 py-3 text-red-600">High</td>
-              <td class="px-5 py-3 text-bih-green-dark">None</td>
-              <td class="px-5 py-3 text-amber-700">Partial</td>
+              <td class="px-4 py-3 font-semibold text-bih-navy">Vendor lock-in</td>
+              <td class="px-4 py-3 text-red-600">High</td>
+              <td class="px-4 py-3 text-red-600">Reinforces existing TrakCare lock-in</td>
+              <td class="px-4 py-3 text-bih-green-dark">None</td>
+              <td class="px-4 py-3 text-amber-700">Partial</td>
             </tr>
           </tbody>
         </table>
