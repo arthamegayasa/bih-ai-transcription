@@ -220,6 +220,14 @@
     border-color: #7dc242;
     font-weight: 600;
   }
+  .lang-btn {
+    transition: all 0.15s ease;
+  }
+  .lang-btn.active {
+    background: #0f2c4f;
+    color: white;
+    border-color: #0f2c4f;
+  }
   .scrollbar-thin::-webkit-scrollbar { width: 6px; }
   .scrollbar-thin::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
   .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
@@ -404,17 +412,17 @@
 
       <!-- WATCH PANEL -->
       <div id="panel-watch" class="flex-1 flex flex-col gap-4" style="min-height: 0;">
-        <div class="flex gap-2 flex-shrink-0">
-          <button class="scenario-btn active px-4 py-2 text-xs font-semibold border-2 border-gray-300 rounded-full" data-scenario="neuro">Neurology · Headache</button>
-          <button class="scenario-btn px-4 py-2 text-xs font-semibold border-2 border-gray-300 rounded-full" data-scenario="im">Internal Medicine · DM Follow-up</button>
-          <button class="scenario-btn px-4 py-2 text-xs font-semibold border-2 border-gray-300 rounded-full" data-scenario="ortho">Orthopedics · Knee Pain</button>
+        <div class="flex gap-2 flex-shrink-0 flex-wrap">
+          <button class="scenario-btn active px-4 py-2 text-xs font-semibold border-2 border-gray-300 rounded-full" data-scenario="neuro">Neurology · Headache <span class="ml-1 text-[10px] opacity-70">· ID</span></button>
+          <button class="scenario-btn px-4 py-2 text-xs font-semibold border-2 border-gray-300 rounded-full" data-scenario="im">Internal Medicine · DM Follow-up <span class="ml-1 text-[10px] opacity-70">· ID</span></button>
+          <button class="scenario-btn px-4 py-2 text-xs font-semibold border-2 border-gray-300 rounded-full" data-scenario="ortho">Orthopedics · Knee Injury <span class="ml-1 text-[10px] opacity-70">· EN</span></button>
           <button id="watch-play" class="ml-auto px-4 py-2 text-xs font-bold bg-bih-green text-white rounded-full hover:bg-bih-green-dark">▶ Play scenario</button>
           <button id="watch-reset" class="px-3 py-2 text-xs font-semibold text-gray-600 hover:text-bih-navy">↻ Reset</button>
         </div>
         <div class="grid grid-cols-2 gap-4 flex-1" style="min-height: 0;">
           <div class="bg-white rounded-xl border border-gray-200 flex flex-col" style="min-height: 0;">
             <div class="px-4 py-2.5 border-b border-gray-100 text-xs font-bold uppercase tracking-widest text-gray-500 flex justify-between items-center">
-              <span>Conversation (Bahasa Indonesia)</span>
+              <span>Conversation <span id="watch-conv-lang" class="text-bih-green normal-case">(Bahasa Indonesia)</span></span>
               <span class="text-[10px] italic text-gray-400 normal-case font-normal">Doctor 🟦 · Patient ⬜</span>
             </div>
             <div id="watch-conversation" class="flex-1 overflow-y-auto scrollbar-thin p-4 flex flex-col gap-2"></div>
@@ -437,8 +445,13 @@
         <div class="flex-shrink-0 bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-5">
           <button id="mic-btn" class="w-16 h-16 rounded-full bg-red-600 text-white text-2xl flex items-center justify-center hover:bg-red-700 transition shadow-lg flex-shrink-0">🎙️</button>
           <div class="flex-1 min-w-0">
-            <p id="live-status" class="font-semibold text-sm text-bih-navy">Click the microphone, then speak in Bahasa Indonesia.</p>
+            <p id="live-status" class="font-semibold text-sm text-bih-navy">Click the microphone, then speak.</p>
             <p class="text-xs text-gray-500 mt-1">Your audio stays in the browser; transcription uses Web Speech API. Best in Chrome / Edge.</p>
+          </div>
+          <div class="flex items-center gap-1 text-xs flex-shrink-0">
+            <span class="text-gray-400 mr-1">Lang:</span>
+            <button id="lang-id" class="lang-btn active px-3 py-1.5 rounded-l-md border-2 border-bih-navy text-xs font-semibold">🇮🇩 ID</button>
+            <button id="lang-en" class="lang-btn px-3 py-1.5 rounded-r-md border-2 border-l-0 border-gray-300 text-gray-600 text-xs font-semibold">🇬🇧 EN</button>
           </div>
           <button id="live-generate" class="px-5 py-3 text-sm font-bold bg-bih-navy text-white rounded-lg hover:bg-bih-navy-light disabled:bg-gray-300 disabled:cursor-not-allowed flex-shrink-0" disabled>Generate SOAP →</button>
         </div>
@@ -727,6 +740,8 @@
   const SCENARIOS = {
     neuro: {
       title: 'Neurology · Headache',
+      language: 'id',
+      languageLabel: '(Bahasa Indonesia)',
       meta: { age: 45, sex: 'M', specialty: 'Neurology', provider: 'dr. Nyoman Artha, SpN' },
       dialog: [
         { speaker: 'doctor',  text: 'Selamat pagi pak, silakan duduk. Apa keluhan utamanya hari ini?' },
@@ -753,6 +768,8 @@
     },
     im: {
       title: 'Internal Medicine · Diabetes Follow-up',
+      language: 'id',
+      languageLabel: '(Bahasa Indonesia)',
       meta: { age: 58, sex: 'F', specialty: 'Internal Medicine', provider: 'dr. Aulia, SpPD' },
       dialog: [
         { speaker: 'doctor',  text: 'Selamat siang ibu. Bagaimana kabarnya? Ini kontrol diabetesnya ya.' },
@@ -775,24 +792,28 @@
       }
     },
     ortho: {
-      title: 'Orthopedics · Knee Pain',
-      meta: { age: 50, sex: 'M', specialty: 'Orthopedics', provider: 'dr. Arrisna, SpOT' },
+      title: 'Orthopedics · Knee Injury (international visitor)',
+      language: 'en',
+      languageLabel: '(English)',
+      meta: { age: 38, sex: 'M', specialty: 'Orthopedics', provider: 'dr. Arrisna, SpOT' },
       dialog: [
-        { speaker: 'doctor',  text: 'Selamat pagi pak. Keluhannya apa hari ini?' },
-        { speaker: 'patient', text: 'Pagi dok. Lutut kanan saya sakit sejak dua minggu lalu, terutama kalau naik tangga.' },
-        { speaker: 'doctor',  text: 'Apa ada riwayat trauma atau jatuh sebelumnya?' },
-        { speaker: 'patient', text: 'Tidak ada dok. Tapi minggu lalu saya main futsal lagi setelah lama tidak olahraga.' },
-        { speaker: 'doctor',  text: 'Bengkak ada? Atau lutut terasa terkunci?' },
-        { speaker: 'patient', text: 'Sedikit bengkak dok, tapi tidak terkunci. Kalau jongkok juga sakit.' },
-        { speaker: 'doctor',  text: 'Saya periksa ya. Ada nyeri tekan di sisi medial, range of motion sedikit terbatas saat fleksi. McMurray test negatif. Tidak ada instabilitas.' },
-        { speaker: 'doctor',  text: 'Kemungkinan ini patellofemoral pain syndrome, dipicu peningkatan aktivitas mendadak. Saya berikan natrium diclofenac 50mg dua kali sehari selama 5 hari, dan rujukan fisioterapi untuk strengthening quadriceps. Foto rontgen lutut sebagai baseline. Kontrol 2 minggu.' },
+        { speaker: 'doctor',  text: 'Good afternoon. What brings you in today?' },
+        { speaker: 'patient', text: 'Hi doctor. My right knee has been hurting for the past three days. I was surfing in Canggu and twisted it on a wave.' },
+        { speaker: 'doctor',  text: 'Was there an audible pop or click at the moment of injury?' },
+        { speaker: 'patient', text: 'I did feel a small pop, yes. After that I couldn''t put full weight on it for a few hours.' },
+        { speaker: 'doctor',  text: 'Any swelling, locking, or sensation that the knee gives way?' },
+        { speaker: 'patient', text: 'Quite a bit of swelling that evening. No locking, but it does feel unstable when I go down stairs.' },
+        { speaker: 'doctor',  text: 'How is the pain on a scale of one to ten, and is it worse with certain movements?' },
+        { speaker: 'patient', text: 'Around six. Worse with twisting and going down stairs. I''m also worried because I fly back to Sydney in five days.' },
+        { speaker: 'doctor',  text: 'Let me examine you. There is moderate effusion, tenderness along the medial joint line, and Lachman test shows mild laxity. McMurray reproduces medial pain. Pulses and sensation are intact distally.' },
+        { speaker: 'doctor',  text: 'My working diagnosis is a medial meniscus tear with a possible partial ACL strain. We will get an MRI today to confirm. For now: ibuprofen 400 milligrams three times daily, knee brace, ice four times a day, and crutches for partial weight-bearing. I will give you a fit-to-fly letter for your return flight, and a referral for orthopedic follow-up in Sydney.' },
       ],
       cachedSoap: {
-        subjective: "50-year-old male presents with two weeks of right knee pain, exacerbated by stair climbing and squatting. Pain onset coincided with a return to recreational futsal after a period of inactivity. No history of acute trauma. Reports mild swelling, denies locking or giving-way episodes.",
-        objective: "Right knee: medial joint-line tenderness on palpation. Mildly limited range of motion in flexion. McMurray test negative. No anterior or posterior instability. Mild effusion.",
-        assessment: "Patellofemoral pain syndrome, right knee — likely activity-related, secondary to deconditioning and abrupt return to high-impact sport.",
-        plan: "1. Diclofenac sodium 50 mg BID for 5 days.\n2. Referral to physiotherapy for quadriceps strengthening and patellar tracking exercises.\n3. Plain radiograph of the right knee (AP and lateral) as baseline.\n4. Activity modification — avoid stair-climbing and squatting until reassessment.\n5. Follow-up in 2 weeks.",
-        chief_complaint: "Right knee pain after return to sport",
+        subjective: "38-year-old male international visitor presents with three days of right knee pain following a surfing injury in Canggu. Reports an audible pop at the moment of injury, with several hours of inability to bear full weight. Reports significant evening swelling, instability when descending stairs, and pain on twisting movements. Pain rated 6/10. Patient is scheduled to return to Sydney in 5 days.",
+        objective: "Right knee: moderate effusion. Tenderness on palpation along the medial joint line. Lachman test demonstrates mild anterior laxity. McMurray test reproduces medial-sided pain. Distal pulses and sensation intact.",
+        assessment: "Suspected right medial meniscus tear with possible partial anterior cruciate ligament strain, secondary to surfing injury. MRI required for confirmation.",
+        plan: "1. MRI of the right knee — same day.\n2. Ibuprofen 400 mg TID with food.\n3. Hinged knee brace; ice four times daily; partial weight-bearing with crutches.\n4. Fit-to-fly letter issued for return flight to Sydney.\n5. Referral to orthopedic follow-up in Sydney with imaging report.\n6. Patient counseled on warning signs requiring earlier review.",
+        chief_complaint: "Acute right knee injury during surfing",
         specialty_hint: "orthopedics"
       }
     },
@@ -872,15 +893,25 @@
   let watchPlaying = false;
   let watchAbort = false;
 
+  function applyScenarioLanguage(key) {
+    const langEl = document.getElementById('watch-conv-lang');
+    if (langEl && SCENARIOS[key]) {
+      langEl.textContent = SCENARIOS[key].languageLabel;
+    }
+  }
+
   document.querySelectorAll('.scenario-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (watchPlaying) return;
       document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       activeScenarioKey = btn.dataset.scenario;
+      applyScenarioLanguage(activeScenarioKey);
       resetWatch();
     });
   });
+
+  applyScenarioLanguage(activeScenarioKey);
 
   const watchConv = document.getElementById('watch-conversation');
   const watchTrans = document.getElementById('watch-transcript');
@@ -998,6 +1029,28 @@
     liveStatus.textContent = 'Browser does not support Web Speech API. Try Chrome or Edge.';
   }
 
+  // Live mode language toggle
+  let liveLanguage = 'id';
+  const langIdBtn = document.getElementById('lang-id');
+  const langEnBtn = document.getElementById('lang-en');
+  function setLiveLanguage(lang) {
+    if (lang === liveLanguage) return;
+    liveLanguage = lang;
+    langIdBtn.classList.toggle('active', lang === 'id');
+    langEnBtn.classList.toggle('active', lang === 'en');
+    const wasRecording = liveRecording;
+    if (wasRecording) {
+      stopListening();
+      setTimeout(() => startListening(), 250);
+    } else {
+      liveStatus.textContent = lang === 'id'
+        ? 'Click the microphone, then speak in Bahasa Indonesia.'
+        : 'Click the microphone, then speak in English.';
+    }
+  }
+  langIdBtn.addEventListener('click', () => setLiveLanguage('id'));
+  langEnBtn.addEventListener('click', () => setLiveLanguage('en'));
+
   function renderLiveTranscript() {
     if (!liveFinalTranscript && !liveInterim) {
       liveTrans.innerHTML = '<span class="text-gray-400 italic">Transcript will appear here as you speak…</span>';
@@ -1015,7 +1068,7 @@
   function startListening() {
     if (!SR) return;
     recognition = new SR();
-    recognition.lang = 'id-ID';
+    recognition.lang = liveLanguage === 'id' ? 'id-ID' : 'en-US';
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = (event) => {
@@ -1044,7 +1097,8 @@
       liveRecording = true;
       micBtn.classList.add('mic-pulse');
       micBtn.textContent = '⏹';
-      liveStatus.innerHTML = '<span class="text-red-600 font-semibold">● Listening</span> — speak in Bahasa Indonesia.';
+      const langName = liveLanguage === 'id' ? 'Bahasa Indonesia' : 'English';
+      liveStatus.innerHTML = `<span class="text-red-600 font-semibold">● Listening</span> — speak in ${langName}.`;
     } catch (e) {
       liveStatus.textContent = 'Could not start microphone.';
     }
